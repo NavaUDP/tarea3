@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+    container_name: namenode
+    environment:
+      - CLUSTER_NAME=test
+    ports:
+      - 9870:9870
+      - 9000:9000
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    networks:
+      - hadoop
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    container_name: datanode
+    environment:
+      - CLUSTER_NAME=test
+      - NAMENODE_URI=hdfs://namenode:9000
+    ports:
+      - 9864:9864
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    networks:
+      - hadoop
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop2.7.4-java8
+    container_name: resourcemanager
+    environment:
+      - CLUSTER_NAME=test
+      - YARN_RESOURCEMANAGER_HOSTNAME=resourcemanager
+    ports:
+      - 8088:8088
+    networks:
+      - hadoop
+
+  nodemanager:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop2.7.4-java8
+    container_name: nodemanager
+    environment:
+      - CLUSTER_NAME=test
+      - RESOURCEMANAGER_HOSTNAME=resourcemanager
+    networks:
+      - hadoop
+
+  historyserver:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop2.7.4-java8
+    container_name: historyserver
+    environment:
+      - CLUSTER_NAME=test
+    ports:
+      - 8188:8188
+    networks:
+      - hadoop
+
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-metastore
+    environment:
+      - HIVE_METASTORE_HOST=hive-metastore
+      - HIVE_METASTORE_PORT=9083
+      - HIVE_METASTORE_DB_HOST=postgres
+      - HIVE_METASTORE_DB_PORT=5432
+      - HIVE_METASTORE_DB_NAME=metastore
+      - HIVE_METASTORE_DB_USER=hive
+      - HIVE_METASTORE_DB_PASS=hive
+    ports:
+      - 9083:9083
+    networks:
+      - hadoop
+
+  hive-server:
+    image: bde2020/hive:2.3.2
+    container_name: hive-server
+    environment:
+      - HIVE_METASTORE_HOST=hive-metastore
+      - HIVE_METASTORE_PORT=9083
+      - HIVE_SERVER_PORT=10000
+    ports:
+      - 10000:10000
+    networks:
+      - hadoop
+
+  postgres:
+    image: postgres:11
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=hive
+      - POSTGRES_PASSWORD=hive
+      - POSTGRES_DB=metastore
+    ports:
+      - 5432:5432
+    networks:
+      - hadoop
+
+networks:
+  hadoop:
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
